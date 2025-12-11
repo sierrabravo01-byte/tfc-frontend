@@ -7,23 +7,7 @@ import CheckoutModal from './components/CheckoutModal';
 import OrderHistoryDrawer from './components/OrderHistoryDrawer';
 import { PRODUCTS, CATEGORIES, BACKEND_API_URL } from './constants';
 import { Product, CartItem, Order } from './types';
-
-// Add a simple Toast component for notifications
-const NotificationToast: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 5000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className="fixed bottom-4 right-4 bg-black text-white px-6 py-4 rounded shadow-lg z-[100] animate-slide-in flex items-center space-x-4">
-      <div className="flex-1">
-        <p className="text-sm font-medium">{message}</p>
-      </div>
-      <button onClick={onClose} className="text-gray-400 hover:text-white">×</button>
-    </div>
-  );
-};
+import { searchProducts } from './utils/search';
 
 function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -33,7 +17,6 @@ function App() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [notification, setNotification] = useState<string | null>(null);
 
   // Load orders from local storage on mount
   useEffect(() => {
@@ -86,22 +69,10 @@ function App() {
     const updatedOrders = [newOrder, ...orders];
     setOrders(updatedOrders);
     localStorage.setItem('tfc_orders', JSON.stringify(updatedOrders));
-    
-    // Show notification
-    setNotification("Order placed successfully! Check your email for confirmation.");
   };
 
-  const filteredProducts = PRODUCTS.filter((product) => {
-    const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
-    
-    const query = searchQuery.toLowerCase().trim();
-    const matchesSearch = !query || 
-      product.name.toLowerCase().includes(query) ||
-      product.description.toLowerCase().includes(query) ||
-      product.vendor.name.toLowerCase().includes(query);
-
-    return matchesCategory && matchesSearch;
-  });
+  // Use the new fuzzy search utility
+  const filteredProducts = searchProducts(PRODUCTS, searchQuery, selectedCategory);
 
   return (
     <div className="min-h-screen bg-white">
@@ -215,13 +186,6 @@ function App() {
         onClose={() => setIsHistoryOpen(false)}
         orders={orders}
       />
-      
-      {notification && (
-        <NotificationToast 
-          message={notification} 
-          onClose={() => setNotification(null)} 
-        />
-      )}
     </div>
   );
 }

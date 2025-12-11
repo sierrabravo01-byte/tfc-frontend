@@ -11,13 +11,46 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onHistoryClick, searchQuery, onSearchChange }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [localSearchValue, setLocalSearchValue] = useState(searchQuery);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync local state if the prop changes externally (e.g. clearing search from App)
+  useEffect(() => {
+    setLocalSearchValue(searchQuery);
+  }, [searchQuery]);
+
+  // Debounce logic: Only call parent onSearchChange after user stops typing for 300ms
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      // Only fire if the value is different to prevent loops
+      if (localSearchValue !== searchQuery) {
+        onSearchChange(localSearchValue);
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [localSearchValue, onSearchChange, searchQuery]);
 
   useEffect(() => {
     if (isSearchOpen && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isSearchOpen]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearchValue(e.target.value);
+  };
+
+  const toggleSearch = () => {
+    if (isSearchOpen && localSearchValue) {
+      // If closing with text, clear it immediately
+      setLocalSearchValue('');
+      onSearchChange('');
+    }
+    setIsSearchOpen(!isSearchOpen);
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 transition-all duration-300">
@@ -32,12 +65,7 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onHistoryClick,
             
             <div className={`flex items-center ${isSearchOpen ? 'bg-gray-50 rounded-full pl-2' : ''} transition-all duration-300`}>
               <button 
-                onClick={() => {
-                  if (isSearchOpen && searchQuery) {
-                    onSearchChange(''); // Clear search if closing with text
-                  }
-                  setIsSearchOpen(!isSearchOpen);
-                }}
+                onClick={toggleSearch}
                 className="p-2 text-gray-600 hover:text-black transition-colors"
                 aria-label="Toggle Search"
               >
@@ -48,8 +76,8 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onHistoryClick,
                 <input
                   ref={inputRef}
                   type="text"
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
+                  value={localSearchValue}
+                  onChange={handleInputChange}
                   placeholder="Search products..."
                   className="w-full bg-transparent border-none focus:ring-0 text-sm text-gray-900 placeholder-gray-400 font-serif h-full py-1 leading-relaxed outline-none"
                 />

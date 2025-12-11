@@ -1,15 +1,20 @@
-import { Product, Vendor } from './types';
+import { Product, Vendor, DeliveryZone } from './types';
 
 export const CURRENCY = "ZMW";
-export const DELIVERY_FEE = 50; // Standard fee for Lusaka
-export const PICKUP_ADDRESS = "The Food Collective HQ, 45 Leopards Hill Road, Lusaka";
 
 // REPLACE THIS WITH YOUR RENDER URL AFTER DEPLOYMENT
-// Example: "https://tfc-backend.onrender.com"
 export const BACKEND_API_URL = "https://tfc-backend-4eo9.onrender.com"; 
 
-// Kazang API Configuration
-// Note: In a production environment, credentials should be stored in secure backend environment variables, not frontend code.
+export const PICKUP_ADDRESS = "The Food Collective HQ, 45 Leopards Hill Road, Lusaka";
+
+// Mock Delivery Zones (In a real Yango integration, this price would come from an API call based on Lat/Long)
+export const DELIVERY_ZONES: DeliveryZone[] = [
+  { id: 'zone_1', name: 'Lusaka Central (CBD, Rhodes Park)', price: 45 },
+  { id: 'zone_2', name: 'Inner Suburbs (Woodlands, Kabulonga)', price: 60 },
+  { id: 'zone_3', name: 'Outer Suburbs (Makeni, Avondale)', price: 95 },
+  { id: 'zone_4', name: 'Outskirts (Chilanga, Chongwe)', price: 150 },
+];
+
 export const KAZANG_CONFIG = {
   host: "https://testapi.kazang.net",
   channel: "TheFoodCollectiveZAM",

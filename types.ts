@@ -19,6 +19,12 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
+export interface DeliveryZone {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface Order {
   id: string;
   date: string;
@@ -30,6 +36,7 @@ export interface Order {
   customerEmail?: string;
   customerPhone?: string;
   deliveryMethod: 'Delivery' | 'Collection';
+  deliveryZone?: string; // e.g., "Woodlands"
   shippingCost: number;
 }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Smartphone, CheckCircle, ShieldCheck, Loader2, SearchCheck, Lock, Truck, MapPin } from 'lucide-react';
-import { CartItem, Order } from '../types';
-import { CURRENCY, KAZANG_PRODUCT_IDS, KAZANG_CONFIG, BACKEND_API_URL, DELIVERY_FEE, PICKUP_ADDRESS } from '../constants';
+import { CartItem, Order, DeliveryZone } from '../types';
+import { CURRENCY, KAZANG_PRODUCT_IDS, KAZANG_CONFIG, BACKEND_API_URL, DELIVERY_ZONES, PICKUP_ADDRESS } from '../constants';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -30,11 +30,12 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
   const [address, setAddress] = useState('');
   const [network, setNetwork] = useState<Provider>('Airtel'); 
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('Delivery');
+  const [selectedZone, setSelectedZone] = useState<DeliveryZone>(DELIVERY_ZONES[0]);
   const [transactionRef, setTransactionRef] = useState('');
   
   // Calculate Totals
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingCost = deliveryMethod === 'Delivery' ? DELIVERY_FEE : 0;
+  const shippingCost = deliveryMethod === 'Delivery' ? selectedZone.price : 0;
   const total = subtotal + shippingCost;
 
   // Reset state when opening
@@ -44,6 +45,24 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
       setTransactionRef('');
     }
   }, [isOpen]);
+
+  const dispatchDeliveryPartner = (order: Order) => {
+    // This function simulates what the BACKEND would do.
+    // In production, the frontend does NOT call Yango/Delivery APIs directly (to protect API Keys).
+    // Instead, the backend sees the new order and calls the delivery partner.
+    
+    console.group("🚚 Dispatching Delivery Partner (Yango Simulation)");
+    console.log(`[Backend] Connecting to Delivery Provider API...`);
+    console.log(`[Backend] POST /v1/delivery/create-claim`);
+    console.log(`[Backend] Payload: {
+       pickup: "${PICKUP_ADDRESS}",
+       dropoff: "${order.deliveryMethod === 'Delivery' ? address + ', ' + selectedZone.name : 'N/A'}",
+       customer_phone: "${order.customerPhone}",
+       items: ${order.items.length}
+    }`);
+    console.log(`[Success] Driver Assigned! Tracking URL: https://yango.delivery/track/tfc-${order.id}`);
+    console.groupEnd();
+  };
 
   const finalizeOrder = async (ref: string) => {
     // Construct the new order object
@@ -58,6 +77,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
       customerEmail: email,
       customerPhone: phone,
       deliveryMethod: deliveryMethod,
+      deliveryZone: deliveryMethod === 'Delivery' ? selectedZone.name : undefined,
       shippingCost: shippingCost
     };
 
@@ -76,7 +96,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
             name: fullName,
             email: email,
             phone: phone,
-            address: deliveryMethod === 'Delivery' ? address : 'Collection'
+            address: deliveryMethod === 'Delivery' ? `${address} (${selectedZone.name})` : 'Collection'
           }
         }),
       }).then(response => {
@@ -91,6 +111,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
 
     } catch (e) {
       console.error("Error triggering backend notifications", e);
+    }
+    
+    // Simulate dispatching the rider if it's a delivery
+    if (deliveryMethod === 'Delivery') {
+      dispatchDeliveryPartner(newOrder);
     }
 
     setStep(Step.SUCCESS);
@@ -121,7 +146,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
     } else if (network === 'MTN') {
       initiationProductId = KAZANG_PRODUCT_IDS.mtnDebit;
       initiationEndpoint = 'mtnDebit';
-      confirmEndpoint = 'mtnDebitApproval (Step 1)';
+      confirmEndpoint = 'mtnDebitApproval';
     } else {
       initiationProductId = KAZANG_PRODUCT_IDS.zamtelMoneyPay;
       initiationEndpoint = 'zamtelMoneyPay';
@@ -137,23 +162,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
       console.log(`[Step 1] Success. Received Confirmation Number.`);
       setStep(Step.PENDING_USSD);
       
-      if (network === 'Airtel' || network === 'Zamtel') {
-         console.log(`[Step 2] POST /${confirmEndpoint} (User Confirmed Details)`);
-      }
-      
       setTimeout(() => {
         setStep(Step.PROCESSING);
-
-        if (network === 'Airtel') {
-           console.log(`[Step 3] Airtel Query Flow Initiated`);
-           console.log(`[Step 3a] POST /airtelPayQuery`);
-           console.log(`[Step 3b] POST /airtelPayQueryConfirm`);
-        } else if (network === 'MTN') {
-           console.log(`[Step 2] POST /mtnDebitApproval`);
-           console.log(`[Step 3] POST /mtnDebitApprovalConfirm`);
-        } else {
-           console.log(`[Final] Transaction Finalized on Zamtel.`);
-        }
 
         console.log(`[System] Processing Order Notifications...`);
         
@@ -194,6 +204,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
               {/* Delivery Method Toggle */}
               <div className="grid grid-cols-2 gap-4">
                 <button
+                  type="button"
                   onClick={() => setDeliveryMethod('Delivery')}
                   className={`flex flex-col items-center justify-center p-4 border rounded-sm transition-all ${
                     deliveryMethod === 'Delivery' 
@@ -203,10 +214,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                 >
                   <Truck size={24} className="mb-2" strokeWidth={1.5} />
                   <span className="text-xs uppercase tracking-widest font-bold">Delivery</span>
-                  <span className="text-[10px] text-gray-400 mt-1">From {CURRENCY} {DELIVERY_FEE}</span>
+                  <span className="text-[10px] text-gray-400 mt-1">Via Partner (Yango/Similar)</span>
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setDeliveryMethod('Collection')}
                   className={`flex flex-col items-center justify-center p-4 border rounded-sm transition-all ${
                     deliveryMethod === 'Collection' 
@@ -262,16 +274,35 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                 </div>
 
                 {deliveryMethod === 'Delivery' ? (
-                  <div>
-                     <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Delivery Address</label>
-                     <textarea 
-                      required 
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      rows={2} 
-                      className="w-full border border-gray-300 px-3 py-3 text-sm focus:border-black focus:outline-none rounded-none" 
-                      placeholder="Street, Area, City" 
-                     />
+                  <div className="space-y-4">
+                     <div>
+                       <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Select Delivery Zone</label>
+                       <select
+                        value={selectedZone.id}
+                        onChange={(e) => {
+                          const zone = DELIVERY_ZONES.find(z => z.id === e.target.value);
+                          if (zone) setSelectedZone(zone);
+                        }}
+                        className="w-full border border-gray-300 px-3 py-3 text-sm focus:border-black focus:outline-none rounded-none bg-white"
+                       >
+                         {DELIVERY_ZONES.map(zone => (
+                           <option key={zone.id} value={zone.id}>
+                             {zone.name} - {CURRENCY} {zone.price}
+                           </option>
+                         ))}
+                       </select>
+                     </div>
+                     <div>
+                       <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Specific Address Details</label>
+                       <textarea 
+                        required 
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        rows={2} 
+                        className="w-full border border-gray-300 px-3 py-3 text-sm focus:border-black focus:outline-none rounded-none" 
+                        placeholder="House Number, Street Name, Landmarks..." 
+                       />
+                    </div>
                   </div>
                 ) : (
                   <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-sm">
@@ -323,6 +354,9 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                      <Lock size={16} />
                      <span>Pay {CURRENCY} {total.toFixed(2)}</span>
                   </button>
+                  <p className="text-[10px] text-center text-gray-400 mt-3">
+                    Secure Payment • Delivery by Partner
+                  </p>
                 </div>
               </form>
             </div>
@@ -362,7 +396,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                </div>
                <div>
                  <p className="font-serif text-lg">Finalizing Transaction...</p>
-                 <p className="text-[10px] text-gray-400 mt-4 animate-pulse">Notifying Vendors...</p>
+                 <p className="text-[10px] text-gray-400 mt-4 animate-pulse">Assigning Delivery Partner...</p>
                </div>
             </div>
           )}
@@ -378,10 +412,16 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                   Thank you for supporting Zambian artisans.
                 </p>
                 
-                {deliveryMethod === 'Collection' && (
+                {deliveryMethod === 'Collection' ? (
                   <div className="bg-yellow-50 border border-yellow-100 p-3 mb-6 rounded text-xs text-yellow-800 text-left">
                     <p className="font-bold mb-1">Ready for Collection at:</p>
                     <p>{PICKUP_ADDRESS}</p>
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 border border-blue-100 p-3 mb-6 rounded text-xs text-blue-800 text-left">
+                    <p className="font-bold mb-1">Delivery Scheduled:</p>
+                    <p>Zone: {selectedZone.name}</p>
+                    <p className="italic mt-1">You will receive a rider tracking link shortly.</p>
                   </div>
                 )}
 

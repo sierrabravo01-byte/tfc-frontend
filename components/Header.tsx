@@ -5,24 +5,31 @@ interface HeaderProps {
   cartCount: number;
   onCartClick: () => void;
   onHistoryClick: () => void;
+  onMenuClick: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onHistoryClick, searchQuery, onSearchChange }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  cartCount, 
+  onCartClick, 
+  onHistoryClick, 
+  onMenuClick, 
+  searchQuery, 
+  onSearchChange 
+}) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [localSearchValue, setLocalSearchValue] = useState(searchQuery);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync local state if the prop changes externally (e.g. clearing search from App)
+  // Sync local state if the prop changes externally
   useEffect(() => {
     setLocalSearchValue(searchQuery);
   }, [searchQuery]);
 
-  // Debounce logic: Only call parent onSearchChange after user stops typing for 300ms
+  // Debounce logic
   useEffect(() => {
     const handler = setTimeout(() => {
-      // Only fire if the value is different to prevent loops
       if (localSearchValue !== searchQuery) {
         onSearchChange(localSearchValue);
       }
@@ -45,7 +52,6 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onHistoryClick,
 
   const toggleSearch = () => {
     if (isSearchOpen && localSearchValue) {
-      // If closing with text, clear it immediately
       setLocalSearchValue('');
       onSearchChange('');
     }
@@ -59,7 +65,11 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onHistoryClick,
           
           {/* Left: Mobile Menu & Search */}
           <div className="flex items-center space-x-2 md:space-x-4">
-            <button className="p-2 text-gray-600 hover:text-black transition-colors">
+            <button 
+              onClick={onMenuClick}
+              className="p-2 text-gray-600 hover:text-black transition-colors"
+              aria-label="Open Menu"
+            >
               <Menu size={24} strokeWidth={1} />
             </button>
             

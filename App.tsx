@@ -5,6 +5,7 @@ import ProductCard from './components/ProductCard';
 import CartDrawer from './components/CartDrawer';
 import CheckoutModal from './components/CheckoutModal';
 import OrderHistoryDrawer from './components/OrderHistoryDrawer';
+import MenuDrawer from './components/MenuDrawer';
 import { PRODUCTS, CATEGORIES, BACKEND_API_URL } from './constants';
 import { Product, CartItem, Order } from './types';
 import { searchProducts } from './utils/search';
@@ -16,6 +17,7 @@ function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   // Filter States
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -91,6 +93,7 @@ function App() {
         cartCount={cart.reduce((a, b) => a + b.quantity, 0)} 
         onCartClick={() => setIsCartOpen(true)}
         onHistoryClick={() => setIsHistoryOpen(true)}
+        onMenuClick={() => setIsMenuOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -107,7 +110,6 @@ function App() {
               key={cat}
               onClick={() => {
                 setSelectedCategory(cat);
-                // We typically don't clear search query here to allow searching WITHIN a category
               }}
               className={`text-sm uppercase tracking-widest pb-1 transition-colors ${
                 selectedCategory === cat 
@@ -216,6 +218,11 @@ function App() {
       </footer>
 
       {/* Overlays */}
+      <MenuDrawer
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+      />
+
       <CartDrawer 
         isOpen={isCartOpen} 
         onClose={() => setIsCartOpen(false)} 

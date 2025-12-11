@@ -13,20 +13,27 @@ const createFuzzyPattern = (query: string): RegExp => {
 };
 
 /**
- * Filters products based on a fuzzy search query and category.
+ * Filters products based on a fuzzy search query, category, and vendor.
  */
 export const searchProducts = (
   products: Product[],
   query: string,
-  category: string
+  category: string,
+  vendorId: string | null
 ): Product[] => {
-  // 1. Filter by Category first (exact match)
   let filtered = products;
+
+  // 1. Filter by Category (exact match)
   if (category !== "All") {
     filtered = filtered.filter(p => p.category === category);
   }
 
-  // 2. Filter by Search Query (Fuzzy)
+  // 2. Filter by Vendor (exact match)
+  if (vendorId && vendorId !== "All") {
+    filtered = filtered.filter(p => p.vendor.id === vendorId);
+  }
+
+  // 3. Filter by Search Query (Fuzzy)
   const trimmedQuery = query.trim();
   if (!trimmedQuery) return filtered;
 

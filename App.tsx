@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import ProductCard from './components/ProductCard';
@@ -8,6 +8,7 @@ import OrderHistoryDrawer from './components/OrderHistoryDrawer';
 import { PRODUCTS, CATEGORIES, BACKEND_API_URL } from './constants';
 import { Product, CartItem, Order } from './types';
 import { searchProducts } from './utils/search';
+import { Store } from 'lucide-react';
 
 function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -15,8 +16,20 @@ function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  
+  // Filter States
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedVendor, setSelectedVendor] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Derive Unique Vendors from Product List
+  const vendors = useMemo(() => {
+    const uniqueMap = new Map();
+    PRODUCTS.forEach(p => {
+      uniqueMap.set(p.vendor.id, p.vendor);
+    });
+    return Array.from(uniqueMap.values());
+  }, []);
 
   // Load orders from local storage on mount
   useEffect(() => {
@@ -30,8 +43,6 @@ function App() {
     }
 
     // WAKE UP RENDER SERVER
-    // Render Free Tier spins down after 15 mins of inactivity.
-    // We ping it when the app loads so it's ready by the time the user checks out.
     fetch(`${BACKEND_API_URL}/`)
       .then(() => console.log("Backend warming up..."))
       .catch(() => console.log("Backend warm-up signal sent"));
@@ -71,8 +82,8 @@ function App() {
     localStorage.setItem('tfc_orders', JSON.stringify(updatedOrders));
   };
 
-  // Use the new fuzzy search utility
-  const filteredProducts = searchProducts(PRODUCTS, searchQuery, selectedCategory);
+  // Use the search utility with Vendor filtering
+  const filteredProducts = searchProducts(PRODUCTS, searchQuery, selectedCategory, selectedVendor);
 
   return (
     <div className="min-h-screen bg-white">
@@ -86,15 +97,17 @@ function App() {
 
       <Hero />
 
-      {/* Categories Filter */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 mb-8">
+      {/* Filters Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-8 space-y-8">
+        
+        {/* Categories */}
         <div className="flex flex-wrap justify-center gap-6 border-b border-gray-100 pb-6">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => {
                 setSelectedCategory(cat);
-                setSearchQuery(""); 
+                // We typically don't clear search query here to allow searching WITHIN a category
               }}
               className={`text-sm uppercase tracking-widest pb-1 transition-colors ${
                 selectedCategory === cat 
@@ -106,15 +119,56 @@ function App() {
             </button>
           ))}
         </div>
+
+        {/* Vendors / Artisans Filter */}
+        <div className="flex flex-col items-center space-y-3">
+          <div className="flex items-center space-x-2 text-gray-400 text-xs uppercase tracking-widest">
+            <Store size={14} />
+            <span>Filter by Artisan</span>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => setSelectedVendor("All")}
+              className={`px-4 py-2 rounded-full text-xs font-serif transition-all border ${
+                selectedVendor === "All"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+              }`}
+            >
+              All Artisans
+            </button>
+            {vendors.map((vendor) => (
+              <button
+                key={vendor.id}
+                onClick={() => setSelectedVendor(vendor.id)}
+                className={`px-4 py-2 rounded-full text-xs font-serif transition-all border ${
+                  selectedVendor === vendor.id
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                }`}
+              >
+                {vendor.name}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Product Grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
-        {searchQuery && (
-          <div className="mb-8 text-center">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-8">
+        {(searchQuery || selectedCategory !== "All" || selectedVendor !== "All") && (
+          <div className="mb-8 text-center space-y-1">
             <p className="text-gray-500 font-serif italic">
-              Showing results for "<span className="text-black not-italic">{searchQuery}</span>"
+              {searchQuery ? (
+                <>Showing results for "<span className="text-black not-italic">{searchQuery}</span>"</>
+              ) : (
+                "Showing products"
+              )}
             </p>
+            <div className="text-xs text-gray-400 flex justify-center gap-2">
+               {selectedCategory !== "All" && <span className="bg-gray-100 px-2 py-1 rounded">{selectedCategory}</span>}
+               {selectedVendor !== "All" && <span className="bg-gray-100 px-2 py-1 rounded">Vendor: {vendors.find(v => v.id === selectedVendor)?.name}</span>}
+            </div>
           </div>
         )}
 
@@ -131,18 +185,18 @@ function App() {
         {filteredProducts.length === 0 && (
           <div className="text-center py-24">
             <p className="text-gray-400 font-serif italic text-lg">
-              {searchQuery 
-                ? `No products found matching "${searchQuery}"`
-                : "No products found in this category."}
+              No products found matching your criteria.
             </p>
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery("")}
-                className="mt-4 text-xs uppercase tracking-widest border-b border-gray-400 text-gray-600 hover:text-black hover:border-black"
-              >
-                Clear Search
-              </button>
-            )}
+            <button 
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedCategory("All");
+                setSelectedVendor("All");
+              }}
+              className="mt-4 text-xs uppercase tracking-widest border-b border-gray-400 text-gray-600 hover:text-black hover:border-black"
+            >
+              Clear All Filters
+            </button>
           </div>
         )}
       </main>

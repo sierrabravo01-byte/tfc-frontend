@@ -1,11 +1,15 @@
 import { Product, Vendor } from './types';
 
 export const CURRENCY = "ZMW";
+export const DELIVERY_FEE = 50; // Standard fee for Lusaka
+export const PICKUP_ADDRESS = "The Food Collective HQ, 45 Leopards Hill Road, Lusaka";
 
-// Your LIVE Render Backend
+// REPLACE THIS WITH YOUR RENDER URL AFTER DEPLOYMENT
+// Example: "https://tfc-backend.onrender.com"
 export const BACKEND_API_URL = "https://tfc-backend-4eo9.onrender.com"; 
 
 // Kazang API Configuration
+// Note: In a production environment, credentials should be stored in secure backend environment variables, not frontend code.
 export const KAZANG_CONFIG = {
   host: "https://testapi.kazang.net",
   channel: "TheFoodCollectiveZAM",
@@ -14,10 +18,15 @@ export const KAZANG_CONFIG = {
 };
 
 export const KAZANG_PRODUCT_IDS = {
+  // Airtel Pay
   airtelPayPayment: 1663,
   airtelPayQuery: 1664,
+  
+  // MTN MoMo
   mtnDebit: 1612,
   mtnDebitApproval: 1613,
+  
+  // Zamtel Money
   zamtelMoneyPay: 1706
 };
 

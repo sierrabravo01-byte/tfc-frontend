@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Smartphone, CheckCircle, ShieldCheck, Loader2, SearchCheck, Lock } from 'lucide-react';
+import { X, Smartphone, CheckCircle, ShieldCheck, Loader2, SearchCheck, Lock, Truck, MapPin } from 'lucide-react';
 import { CartItem, Order } from '../types';
-import { CURRENCY, KAZANG_PRODUCT_IDS, KAZANG_CONFIG, BACKEND_API_URL } from '../constants';
+import { CURRENCY, KAZANG_PRODUCT_IDS, KAZANG_CONFIG, BACKEND_API_URL, DELIVERY_FEE, PICKUP_ADDRESS } from '../constants';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -11,12 +11,6 @@ interface CheckoutModalProps {
   onOrderComplete: (order: Order) => void;
 }
 
-// Checkout Steps
-// 1. Submit Data (Form)
-// 2. Initiating (API Request to Kazang)
-// 3. Pending USSD (User interaction on phone)
-// 4. Processing/Querying (Finalizing transaction)
-// 5. Success
 enum Step {
   FORM = 0,
   INITIATING = 1,
@@ -26,16 +20,22 @@ enum Step {
 }
 
 type Provider = 'Airtel' | 'MTN' | 'Zamtel';
+type DeliveryMethod = 'Delivery' | 'Collection';
 
 const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, clearCart, onOrderComplete }) => {
   const [step, setStep] = useState<Step>(Step.FORM);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
+  const [address, setAddress] = useState('');
   const [network, setNetwork] = useState<Provider>('Airtel'); 
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('Delivery');
   const [transactionRef, setTransactionRef] = useState('');
   
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  // Calculate Totals
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shippingCost = deliveryMethod === 'Delivery' ? DELIVERY_FEE : 0;
+  const total = subtotal + shippingCost;
 
   // Reset state when opening
   useEffect(() => {
@@ -50,21 +50,21 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
     const newOrder: Order = {
       id: Date.now().toString(),
       date: new Date().toISOString(),
-      items: [...cart], // Snapshot of current cart
+      items: [...cart], 
       total: total,
       transactionRef: ref,
       paymentMethod: `${network} Mobile Money`,
       status: 'Completed',
       customerEmail: email,
-      customerPhone: phone
+      customerPhone: phone,
+      deliveryMethod: deliveryMethod,
+      shippingCost: shippingCost
     };
 
-    // Trigger Notification Backend (Fire and Forget)
+    // Trigger Notification Backend
     try {
       console.log(`[Notification] Connecting to backend at ${BACKEND_API_URL}...`);
       
-      // We don't await this if we want the UI to be snappy, but for a prototype 
-      // let's log the result to ensure it works.
       fetch(`${BACKEND_API_URL}/api/create-order`, {
         method: 'POST',
         headers: {
@@ -75,7 +75,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
           customer: {
             name: fullName,
             email: email,
-            phone: phone
+            phone: phone,
+            address: deliveryMethod === 'Delivery' ? address : 'Collection'
           }
         }),
       }).then(response => {
@@ -85,7 +86,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
           console.warn("[Notification] Backend returned error status.");
         }
       }).catch(err => {
-        console.warn("[Notification] Could not reach backend (Is it running?).", err);
+        console.warn("[Notification] Could not reach backend.", err);
       });
 
     } catch (e) {
@@ -93,7 +94,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
     }
 
     setStep(Step.SUCCESS);
-    // Save order locally and clear cart
     onOrderComplete(newOrder);
     clearCart();
   };
@@ -110,22 +110,20 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
     setTransactionRef(ref);
 
     // KAZANG API SIMULATION
-    // This logic mimics the Postman script flow
-    
     let initiationProductId = 0;
     let initiationEndpoint = '';
     let confirmEndpoint = '';
 
     if (network === 'Airtel') {
-      initiationProductId = KAZANG_PRODUCT_IDS.airtelPayPayment; // 1663
+      initiationProductId = KAZANG_PRODUCT_IDS.airtelPayPayment;
       initiationEndpoint = 'airtelPayPayment';
       confirmEndpoint = 'airtelPayPaymentConfirm';
     } else if (network === 'MTN') {
-      initiationProductId = KAZANG_PRODUCT_IDS.mtnDebit; // 1612
+      initiationProductId = KAZANG_PRODUCT_IDS.mtnDebit;
       initiationEndpoint = 'mtnDebit';
-      confirmEndpoint = 'mtnDebitApproval (Step 1)'; // MTN uses DebitApproval as the second main phase
+      confirmEndpoint = 'mtnDebitApproval (Step 1)';
     } else {
-      initiationProductId = KAZANG_PRODUCT_IDS.zamtelMoneyPay; // 1706
+      initiationProductId = KAZANG_PRODUCT_IDS.zamtelMoneyPay;
       initiationEndpoint = 'zamtelMoneyPay';
       confirmEndpoint = 'zamtelMoneyPayConfirm';
     }
@@ -135,43 +133,30 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
     console.log(`[Step 1] POST /${initiationEndpoint} (Product ID: ${initiationProductId})`);
     console.log(`[Step 1] Payload: { amount: "${total * 100}", wallet_msisdn: "${phone}" }`);
 
-    // Simulate Network latency for Kazang API request (Step 1)
     setTimeout(() => {
       console.log(`[Step 1] Success. Received Confirmation Number.`);
-      
-      // Transition to "Pending" - Waiting for user to approve USSD push
       setStep(Step.PENDING_USSD);
       
-      if (network === 'Airtel') {
-         console.log(`[Step 2] POST /${confirmEndpoint} (User Confirmed Details)`);
-      } else if (network === 'Zamtel') {
+      if (network === 'Airtel' || network === 'Zamtel') {
          console.log(`[Step 2] POST /${confirmEndpoint} (User Confirmed Details)`);
       }
       
-      // Simulate User taking time to approve on phone (e.g. 5 seconds)
       setTimeout(() => {
-        
-        // Step 3: Verification/Finalization
         setStep(Step.PROCESSING);
 
-        // Provider specific finalization logic based on Postman Script
         if (network === 'Airtel') {
-           // Airtel requires the Query Flow
            console.log(`[Step 3] Airtel Query Flow Initiated`);
-           console.log(`[Step 3a] POST /airtelPayQuery (Product ID: ${KAZANG_PRODUCT_IDS.airtelPayQuery})`);
+           console.log(`[Step 3a] POST /airtelPayQuery`);
            console.log(`[Step 3b] POST /airtelPayQueryConfirm`);
         } else if (network === 'MTN') {
-           // MTN requires Debit Approval
-           console.log(`[Step 2] POST /mtnDebitApproval (Product ID: ${KAZANG_PRODUCT_IDS.mtnDebitApproval})`);
+           console.log(`[Step 2] POST /mtnDebitApproval`);
            console.log(`[Step 3] POST /mtnDebitApprovalConfirm`);
         } else {
            console.log(`[Final] Transaction Finalized on Zamtel.`);
         }
 
-        // Simulate Notification Delay (processing order)
         console.log(`[System] Processing Order Notifications...`);
         
-        // Simulate Final API latency
         setTimeout(() => {
            console.log(`[Success] Payment Complete. Transaction Ref: ${ref}`);
            console.groupEnd();
@@ -186,10 +171,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
       <div className="relative bg-white w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
@@ -207,50 +190,102 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
         <div className="p-6 md:p-8 flex-1 overflow-y-auto">
           {step === Step.FORM && (
             <div className="space-y-6">
-              {/* Order Summary Summary */}
-              <div className="bg-gray-50 p-4 rounded-sm border border-gray-100">
-                 <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Order Total</p>
-                 <p className="text-3xl font-serif text-black">{CURRENCY} {total.toFixed(2)}</p>
-                 <p className="text-xs text-gray-500 mt-1">{cart.length} items from The Food Collective</p>
+              
+              {/* Delivery Method Toggle */}
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setDeliveryMethod('Delivery')}
+                  className={`flex flex-col items-center justify-center p-4 border rounded-sm transition-all ${
+                    deliveryMethod === 'Delivery' 
+                    ? 'border-black bg-stone-50 text-black ring-1 ring-black' 
+                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  <Truck size={24} className="mb-2" strokeWidth={1.5} />
+                  <span className="text-xs uppercase tracking-widest font-bold">Delivery</span>
+                  <span className="text-[10px] text-gray-400 mt-1">From {CURRENCY} {DELIVERY_FEE}</span>
+                </button>
+
+                <button
+                  onClick={() => setDeliveryMethod('Collection')}
+                  className={`flex flex-col items-center justify-center p-4 border rounded-sm transition-all ${
+                    deliveryMethod === 'Collection' 
+                    ? 'border-black bg-stone-50 text-black ring-1 ring-black' 
+                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  <MapPin size={24} className="mb-2" strokeWidth={1.5} />
+                  <span className="text-xs uppercase tracking-widest font-bold">Collection</span>
+                  <span className="text-[10px] text-gray-400 mt-1">Free Pickup</span>
+                </button>
+              </div>
+
+              {/* Order Summary */}
+              <div className="bg-gray-50 p-4 rounded-sm border border-gray-100 space-y-2">
+                 <div className="flex justify-between text-xs text-gray-500">
+                   <span>Subtotal</span>
+                   <span>{CURRENCY} {subtotal.toFixed(2)}</span>
+                 </div>
+                 <div className="flex justify-between text-xs text-gray-500 border-b border-gray-200 pb-2">
+                   <span>Shipping ({deliveryMethod})</span>
+                   <span>{shippingCost === 0 ? 'FREE' : `${CURRENCY} ${shippingCost.toFixed(2)}`}</span>
+                 </div>
+                 <div className="flex justify-between items-end pt-1">
+                    <span className="text-xs uppercase tracking-widest text-black font-bold">Total</span>
+                    <span className="text-2xl font-serif text-black leading-none">{CURRENCY} {total.toFixed(2)}</span>
+                 </div>
               </div>
 
               {/* Payment Form */}
               <form onSubmit={handlePay} className="space-y-5">
-                <div>
-                   <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Full Name</label>
-                   <input 
-                    required 
-                    type="text" 
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full border border-gray-300 px-3 py-3 text-sm focus:border-black focus:outline-none rounded-none" 
-                    placeholder="Enter your name" 
-                   />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                     <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Full Name</label>
+                     <input 
+                      required 
+                      type="text" 
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full border border-gray-300 px-3 py-3 text-sm focus:border-black focus:outline-none rounded-none" 
+                     />
+                  </div>
+                  <div>
+                     <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Email</label>
+                     <input 
+                      required 
+                      type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full border border-gray-300 px-3 py-3 text-sm focus:border-black focus:outline-none rounded-none" 
+                     />
+                  </div>
                 </div>
-                <div>
-                   <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Email Address</label>
-                   <input 
-                    required 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full border border-gray-300 px-3 py-3 text-sm focus:border-black focus:outline-none rounded-none" 
-                    placeholder="For receipt and confirmations" 
-                   />
-                </div>
-                <div>
-                   <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Delivery Address</label>
-                   <textarea required rows={2} className="w-full border border-gray-300 px-3 py-3 text-sm focus:border-black focus:outline-none rounded-none" placeholder="Street, Area, City" />
-                </div>
+
+                {deliveryMethod === 'Delivery' ? (
+                  <div>
+                     <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Delivery Address</label>
+                     <textarea 
+                      required 
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      rows={2} 
+                      className="w-full border border-gray-300 px-3 py-3 text-sm focus:border-black focus:outline-none rounded-none" 
+                      placeholder="Street, Area, City" 
+                     />
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-sm">
+                    <p className="text-xs font-bold text-yellow-800 uppercase tracking-widest mb-1">Collection Point</p>
+                    <p className="text-sm text-yellow-900">{PICKUP_ADDRESS}</p>
+                    <p className="text-[10px] text-yellow-700 mt-2">Available for pickup: Mon-Fri, 08:00 - 17:00</p>
+                  </div>
+                )}
                 
                 <div className="pt-4 border-t border-gray-100">
                   <h3 className="font-serif text-lg mb-4 flex items-center">
                     <Smartphone className="mr-2 h-5 w-5" /> 
                     Mobile Money Payment
                   </h3>
-                  <p className="text-xs text-gray-500 mb-4">
-                    Select your network provider. We support Airtel Pay, MTN MoMo, and Zamtel.
-                  </p>
                   
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     {(['Airtel', 'MTN', 'Zamtel'] as Provider[]).map((net) => (
@@ -286,11 +321,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                 <div className="pt-2">
                   <button type="submit" className="w-full bg-green-700 hover:bg-green-800 text-white py-4 font-bold text-sm uppercase tracking-widest transition-colors flex items-center justify-center space-x-2">
                      <Lock size={16} />
-                     <span>Pay with Kazang</span>
+                     <span>Pay {CURRENCY} {total.toFixed(2)}</span>
                   </button>
-                  <p className="text-[10px] text-center text-gray-400 mt-3">
-                    Powered by Kazang • Encrypted & Secure
-                  </p>
                 </div>
               </form>
             </div>
@@ -313,12 +345,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
               <div>
                 <h3 className="text-xl font-serif mb-2">Check your phone</h3>
                 <p className="text-gray-500 text-sm max-w-xs mx-auto">
-                  We've sent a payment prompt to <strong>+260 {phone}</strong> on {network}.
+                  Payment prompt sent to <strong>+260 {phone}</strong>
                 </p>
                 <div className="bg-yellow-50 border border-yellow-100 p-3 mt-4 text-xs text-yellow-800 rounded">
-                  Please enter your PIN on your mobile device to authorize the transaction.
+                  Enter PIN on mobile to authorize {CURRENCY} {total.toFixed(2)}
                 </div>
-                <p className="text-[10px] text-gray-400 mt-4">Ref: {transactionRef}</p>
               </div>
             </div>
           )}
@@ -330,12 +361,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                  <SearchCheck className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-blue-700" size={16}/>
                </div>
                <div>
-                 <p className="font-serif text-lg">
-                    {network === 'Airtel' ? 'Verifying Payment...' : 'Finalizing Transaction...'}
-                 </p>
-                 <p className="text-xs text-gray-500 mt-2">
-                   {network === 'Airtel' ? 'Querying Airtel Pay status' : `Confirming ${network} approval`}
-                 </p>
+                 <p className="font-serif text-lg">Finalizing Transaction...</p>
                  <p className="text-[10px] text-gray-400 mt-4 animate-pulse">Notifying Vendors...</p>
                </div>
             </div>
@@ -349,14 +375,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
               <div>
                 <h3 className="text-2xl font-serif mb-2">Order Confirmed!</h3>
                 <p className="text-gray-500 text-sm max-w-xs mx-auto mb-2">
-                  Thank you for supporting Zambian artisans. Your payment via Kazang was successful.
+                  Thank you for supporting Zambian artisans.
                 </p>
                 
-                {email && (
-                  <div className="bg-blue-50 border border-blue-100 p-3 mb-6 rounded text-xs text-blue-800">
-                    <p className="font-bold mb-1">Confirmation Sent</p>
-                    <p>Email: {email}</p>
-                    {phone && <p>SMS: +260 {phone}</p>}
+                {deliveryMethod === 'Collection' && (
+                  <div className="bg-yellow-50 border border-yellow-100 p-3 mb-6 rounded text-xs text-yellow-800 text-left">
+                    <p className="font-bold mb-1">Ready for Collection at:</p>
+                    <p>{PICKUP_ADDRESS}</p>
                   </div>
                 )}
 

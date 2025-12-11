@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Package, Calendar, Smartphone } from 'lucide-react';
+import { X, Package, Calendar, Smartphone, Truck, MapPin } from 'lucide-react';
 import { Order } from '../types';
 import { CURRENCY } from '../constants';
 
@@ -56,11 +56,20 @@ const OrderHistoryDrawer: React.FC<OrderHistoryDrawerProps> = ({ isOpen, onClose
                   </div>
 
                   {/* Transaction Info */}
-                  <div className="mb-4 bg-gray-50 p-2 rounded text-[10px] text-gray-500 flex items-center justify-between">
-                    <span className="flex items-center">
-                        <Smartphone size={12} className="mr-1"/> Mobile Money
-                    </span>
-                    <span>Ref: {order.transactionRef}</span>
+                  <div className="mb-4 bg-gray-50 p-2 rounded space-y-1">
+                    <div className="text-[10px] text-gray-500 flex items-center justify-between">
+                      <span className="flex items-center">
+                          <Smartphone size={12} className="mr-1"/> Mobile Money
+                      </span>
+                      <span>Ref: {order.transactionRef}</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 flex items-center justify-between border-t border-gray-200 pt-1 mt-1">
+                      <span className="flex items-center">
+                          {order.deliveryMethod === 'Delivery' ? <Truck size={12} className="mr-1"/> : <MapPin size={12} className="mr-1"/>}
+                          {order.deliveryMethod}
+                      </span>
+                      <span>{order.shippingCost > 0 ? `Shipping: ${CURRENCY} ${order.shippingCost}` : 'Free'}</span>
+                    </div>
                   </div>
 
                   {/* Items List */}

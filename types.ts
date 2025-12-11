@@ -29,6 +29,8 @@ export interface Order {
   status: 'Completed' | 'Pending' | 'Failed';
   customerEmail?: string;
   customerPhone?: string;
+  deliveryMethod: 'Delivery' | 'Collection';
+  shippingCost: number;
 }
 
 export interface UserDetails {

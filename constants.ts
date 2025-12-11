@@ -7,13 +7,21 @@ export const BACKEND_API_URL = "https://tfc-backend-4eo9.onrender.com";
 
 export const PICKUP_ADDRESS = "The Food Collective HQ, 45 Leopards Hill Road, Lusaka";
 
-// Mock Delivery Zones (In a real Yango integration, this price would come from an API call based on Lat/Long)
+// Mock Delivery Zones
 export const DELIVERY_ZONES: DeliveryZone[] = [
   { id: 'zone_1', name: 'Lusaka Central (CBD, Rhodes Park)', price: 45 },
   { id: 'zone_2', name: 'Inner Suburbs (Woodlands, Kabulonga)', price: 60 },
   { id: 'zone_3', name: 'Outer Suburbs (Makeni, Avondale)', price: 95 },
   { id: 'zone_4', name: 'Outskirts (Chilanga, Chongwe)', price: 150 },
 ];
+
+// Address Suggestions mapped to Zones
+export const ZONE_LANDMARKS: Record<string, string[]> = {
+  'zone_1': ['Manda Hill Mall', 'Levy Junction', 'Cairo Road', 'Rhodes Park School', 'Addis Ababa Drive', 'Fairview Hospital'],
+  'zone_2': ['Woodlands Shopping Mall', 'Kabulonga Centro', 'Lewanika Mall', 'Crossroads Shopping Centre', 'Ibex Hill', 'State House Area'],
+  'zone_3': ['Twin Palm Mall', 'Avondale Shopping Centre', 'Makeni Mall', 'Cosmopolitan Mall', 'Chalala', 'Chelston'],
+  'zone_4': ['Chilanga Golf Club', 'Sandy\'s Creations', 'Garden City Mall', 'KKIA Airport', 'Chongwe Town'],
+};
 
 export const KAZANG_CONFIG = {
   host: "https://testapi.kazang.net",

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Smartphone, CheckCircle, ShieldCheck, Loader2, SearchCheck, Lock, Truck, MapPin } from 'lucide-react';
+import { X, Smartphone, CheckCircle, ShieldCheck, Loader2, SearchCheck, Lock, Truck, MapPin, PlusCircle } from 'lucide-react';
 import { CartItem, Order, DeliveryZone } from '../types';
-import { CURRENCY, KAZANG_PRODUCT_IDS, KAZANG_CONFIG, BACKEND_API_URL, DELIVERY_ZONES, PICKUP_ADDRESS } from '../constants';
+import { CURRENCY, KAZANG_PRODUCT_IDS, KAZANG_CONFIG, BACKEND_API_URL, DELIVERY_ZONES, PICKUP_ADDRESS, ZONE_LANDMARKS } from '../constants';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -46,11 +46,15 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
     }
   }, [isOpen]);
 
+  // Helper to add landmark suggestion
+  const addLandmark = (landmark: string) => {
+    if (address.includes(landmark)) return;
+    const newAddress = address ? `${address}, near ${landmark}` : `Near ${landmark}`;
+    setAddress(newAddress);
+  };
+
   const dispatchDeliveryPartner = (order: Order) => {
     // This function simulates what the BACKEND would do.
-    // In production, the frontend does NOT call Yango/Delivery APIs directly (to protect API Keys).
-    // Instead, the backend sees the new order and calls the delivery partner.
-    
     console.group("🚚 Dispatching Delivery Partner (Yango Simulation)");
     console.log(`[Backend] Connecting to Delivery Provider API...`);
     console.log(`[Backend] POST /v1/delivery/create-claim`);
@@ -65,7 +69,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
   };
 
   const finalizeOrder = async (ref: string) => {
-    // Construct the new order object
     const newOrder: Order = {
       id: Date.now().toString(),
       date: new Date().toISOString(),
@@ -81,7 +84,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
       shippingCost: shippingCost
     };
 
-    // Trigger Notification Backend
     try {
       console.log(`[Notification] Connecting to backend at ${BACKEND_API_URL}...`);
       
@@ -113,7 +115,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
       console.error("Error triggering backend notifications", e);
     }
     
-    // Simulate dispatching the rider if it's a delivery
     if (deliveryMethod === 'Delivery') {
       dispatchDeliveryPartner(newOrder);
     }
@@ -127,14 +128,10 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
     e.preventDefault();
     if (!phone) return;
     
-    // Step 1: Initiate Payment
     setStep(Step.INITIATING);
-    
-    // Generate a simulated transaction reference
     const ref = `TFC-${Math.floor(Math.random() * 1000000)}`;
     setTransactionRef(ref);
 
-    // KAZANG API SIMULATION
     let initiationProductId = 0;
     let initiationEndpoint = '';
     let confirmEndpoint = '';
@@ -164,7 +161,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
       
       setTimeout(() => {
         setStep(Step.PROCESSING);
-
         console.log(`[System] Processing Order Notifications...`);
         
         setTimeout(() => {
@@ -185,7 +181,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
 
       <div className="relative bg-white w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
-        {/* Header */}
         <div className="bg-stone-50 px-6 py-4 flex items-center justify-between border-b border-gray-100">
           <div className="flex items-center space-x-2">
             <ShieldCheck size={18} className="text-green-700"/>
@@ -196,12 +191,10 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 md:p-8 flex-1 overflow-y-auto">
           {step === Step.FORM && (
             <div className="space-y-6">
               
-              {/* Delivery Method Toggle */}
               <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
@@ -214,7 +207,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                 >
                   <Truck size={24} className="mb-2" strokeWidth={1.5} />
                   <span className="text-xs uppercase tracking-widest font-bold">Delivery</span>
-                  <span className="text-[10px] text-gray-400 mt-1">Via Partner (Yango/Similar)</span>
+                  <span className="text-[10px] text-gray-400 mt-1">Via Partner (Yango)</span>
                 </button>
 
                 <button
@@ -232,7 +225,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                 </button>
               </div>
 
-              {/* Order Summary */}
               <div className="bg-gray-50 p-4 rounded-sm border border-gray-100 space-y-2">
                  <div className="flex justify-between text-xs text-gray-500">
                    <span>Subtotal</span>
@@ -248,7 +240,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                  </div>
               </div>
 
-              {/* Payment Form */}
               <form onSubmit={handlePay} className="space-y-5">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -292,16 +283,37 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
                          ))}
                        </select>
                      </div>
+                     
                      <div>
-                       <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Specific Address Details</label>
+                       <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5">Address & Suggestions</label>
                        <textarea 
                         required 
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                         rows={2} 
                         className="w-full border border-gray-300 px-3 py-3 text-sm focus:border-black focus:outline-none rounded-none" 
-                        placeholder="House Number, Street Name, Landmarks..." 
+                        placeholder="House Number, Street Name, or click a landmark below..." 
                        />
+                       
+                       {/* Smart Address Suggestions */}
+                       {ZONE_LANDMARKS[selectedZone.id] && (
+                         <div className="mt-2">
+                           <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Common Landmarks nearby:</p>
+                           <div className="flex flex-wrap gap-2">
+                             {ZONE_LANDMARKS[selectedZone.id].map(landmark => (
+                               <button
+                                 key={landmark}
+                                 type="button"
+                                 onClick={() => addLandmark(landmark)}
+                                 className="flex items-center text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors"
+                               >
+                                 <PlusCircle size={10} className="mr-1" />
+                                 {landmark}
+                               </button>
+                             ))}
+                           </div>
+                         </div>
+                       )}
                     </div>
                   </div>
                 ) : (

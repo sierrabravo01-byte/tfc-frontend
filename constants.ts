@@ -65,7 +65,7 @@ export const PRODUCTS: Product[] = [
     description: "Classic artisanal white sourdough with a crisp crust and airy crumb. Fermented for 48 hours for deep flavor.",
     price: 100,
     category: "Bakery",
-    image: "https://images.unsplash.com/photo-1585476263060-b7a676b963b1?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&q=80&w=800",
     vendor: mainVendor,
     tags: ["bread", "sourdough", "fresh", "bakery"]
   },
@@ -85,7 +85,7 @@ export const PRODUCTS: Product[] = [
     description: "Sparkling probiotic tea. Refreshing, slightly tart, and packed with gut-health benefits. Large 750ml bottle.",
     price: 75,
     category: "Beverages",
-    image: "https://images.unsplash.com/photo-1623910271589-73e44047a752?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&q=80&w=800",
     vendor: mainVendor,
     tags: ["drink", "probiotic", "health", "beverage"]
   },
@@ -129,6 +129,16 @@ export const PRODUCTS: Product[] = [
     image: "https://picsum.photos/id/514/800/800",
     vendor: mainVendor,
     tags: ["superfood", "powder", "baking"]
+  },
+  {
+    id: "5",
+    name: "Artisanal Sourdough",
+    description: "Slow-fermented rustic loaf with a crispy crust and chewy interior. Baked fresh daily.",
+    price: 60,
+    category: "Bakery",
+    image: "https://picsum.photos/id/999/800/800",
+    vendor: mainVendor,
+    tags: ["bread", "fresh", "bakery"]
   },
   {
     id: "6",

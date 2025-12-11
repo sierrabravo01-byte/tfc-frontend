@@ -84,6 +84,12 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
       shippingCost: shippingCost
     };
 
+    // Identify unique vendors to notify
+    // This looks at the cart, extracts unique vendor emails (e.g. ninagibs@gmail.com)
+    const vendorsToNotify = Array.from(new Set(cart.map(item => item.vendor)))
+      .filter(v => v.email)
+      .map(v => ({ name: v.name, email: v.email }));
+
     try {
       console.log(`[Notification] Connecting to backend at ${BACKEND_API_URL}...`);
       
@@ -99,11 +105,16 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
             email: email,
             phone: phone,
             address: deliveryMethod === 'Delivery' ? `${address} (${selectedZone.name})` : 'Collection'
-          }
+          },
+          // Send vendor info so backend can dispatch emails
+          vendorNotifications: vendorsToNotify
         }),
       }).then(response => {
         if (response.ok) {
-          console.log("[Notification] Emails sent successfully via Backend.");
+          console.log("[Notification] Customer Confirmation sent.");
+          if (vendorsToNotify.length > 0) {
+            console.log(`[Notification] Vendor Alerts sent to: ${vendorsToNotify.map(v => v.email).join(', ')}`);
+          }
         } else {
           console.warn("[Notification] Backend returned error status.");
         }

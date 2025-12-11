@@ -46,16 +46,50 @@ export const KAZANG_PRODUCT_IDS = {
 const mainVendor: Vendor = {
   id: "v1",
   name: "The Food Collective",
-  location: "Lusaka, Zambia"
+  location: "Lusaka, Zambia",
+  email: "ninagibs@gmail.com"
 };
 
 const guestVendor: Vendor = {
   id: "v2",
   name: "Mama Tembo's Spices",
-  location: "Livingstone, Zambia"
+  location: "Livingstone, Zambia",
+  email: "orders@mamatembo.com"
 };
 
 export const PRODUCTS: Product[] = [
+  // --- Beatty's Products (The Food Collective) ---
+  {
+    id: "9",
+    name: "Beatty's White Sourdough Bread",
+    description: "Classic artisanal white sourdough with a crisp crust and airy crumb. Fermented for 48 hours for deep flavor.",
+    price: 100,
+    category: "Bakery",
+    image: "https://images.unsplash.com/photo-1585476263060-b7a676b963b1?auto=format&fit=crop&q=80&w=800",
+    vendor: mainVendor,
+    tags: ["bread", "sourdough", "fresh", "bakery"]
+  },
+  {
+    id: "10",
+    name: "Beatty's Brown Sourdough Bread",
+    description: "Nutty and wholesome brown sourdough loaf. Rich in fiber and perfect for hearty toasted sandwiches.",
+    price: 120,
+    category: "Bakery",
+    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=800",
+    vendor: mainVendor,
+    tags: ["bread", "sourdough", "wholewheat", "bakery"]
+  },
+  {
+    id: "11",
+    name: "Beatty's Kombucha 750ml",
+    description: "Sparkling probiotic tea. Refreshing, slightly tart, and packed with gut-health benefits. Large 750ml bottle.",
+    price: 75,
+    category: "Beverages",
+    image: "https://images.unsplash.com/photo-1623910271589-73e44047a752?auto=format&fit=crop&q=80&w=800",
+    vendor: mainVendor,
+    tags: ["drink", "probiotic", "health", "beverage"]
+  },
+  // --- Existing Products ---
   {
     id: "1",
     name: "Wild Zambezi Honey",
@@ -95,16 +129,6 @@ export const PRODUCTS: Product[] = [
     image: "https://picsum.photos/id/514/800/800",
     vendor: mainVendor,
     tags: ["superfood", "powder", "baking"]
-  },
-  {
-    id: "5",
-    name: "Artisanal Sourdough",
-    description: "Slow-fermented rustic loaf with a crispy crust and chewy interior. Baked fresh daily.",
-    price: 60,
-    category: "Bakery",
-    image: "https://picsum.photos/id/999/800/800",
-    vendor: mainVendor,
-    tags: ["bread", "fresh", "bakery"]
   },
   {
     id: "6",

@@ -2,6 +2,7 @@ export interface Vendor {
   id: string;
   name: string;
   location: string;
+  email?: string; // Email for order notifications
 }
 
 export interface Product {
@@ -36,7 +37,7 @@ export interface Order {
   customerEmail?: string;
   customerPhone?: string;
   deliveryMethod: 'Delivery' | 'Collection';
-  deliveryZone?: string; // e.g., "Woodlands"
+  deliveryZone?: string; 
   shippingCost: number;
 }
 

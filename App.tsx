@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import ProductCard from './components/ProductCard';
@@ -23,6 +23,9 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedVendor, setSelectedVendor] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Refs for scrolling
+  const shopSectionRef = useRef<HTMLDivElement>(null);
 
   // Derive Unique Vendors from Product List
   const vendors = useMemo(() => {
@@ -84,6 +87,10 @@ function App() {
     localStorage.setItem('tfc_orders', JSON.stringify(updatedOrders));
   };
 
+  const scrollToShop = () => {
+    shopSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   // Use the search utility with Vendor filtering
   const filteredProducts = searchProducts(PRODUCTS, searchQuery, selectedCategory, selectedVendor);
 
@@ -98,10 +105,10 @@ function App() {
         onSearchChange={setSearchQuery}
       />
 
-      <Hero />
+      <Hero onShopClick={scrollToShop} />
 
-      {/* Filters Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-8 space-y-8">
+      {/* Filters Section - Attached Ref here for scrolling */}
+      <div ref={shopSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-8 space-y-8">
         
         {/* Categories */}
         <div className="flex flex-wrap justify-center gap-6 border-b border-gray-100 pb-6">

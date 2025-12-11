@@ -3,7 +3,11 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import { getAiRecommendation } from '../services/geminiService';
 import { PRODUCTS } from '../constants';
 
-const Hero: React.FC = () => {
+interface HeroProps {
+  onShopClick: () => void;
+}
+
+const Hero: React.FC<HeroProps> = ({ onShopClick }) => {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +44,10 @@ const Hero: React.FC = () => {
         <h1 className="text-4xl md:text-7xl font-serif text-white mb-8 leading-tight">
           Taste the Spirit <br/> of Zambia
         </h1>
-        <button className="px-8 py-3 bg-white text-black text-xs md:text-sm uppercase tracking-widest hover:bg-stone-100 transition-colors duration-300 border border-white">
+        <button 
+          onClick={onShopClick}
+          className="px-8 py-3 bg-white text-black text-xs md:text-sm uppercase tracking-widest hover:bg-stone-100 transition-colors duration-300 border border-white"
+        >
           Shop the Collection
         </button>
 

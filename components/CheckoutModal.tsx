@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Smartphone, CheckCircle, ShieldCheck, Loader2, SearchCheck, Lock, Truck, MapPin, PlusCircle } from 'lucide-react';
-import { CartItem, Order, DeliveryZone } from '../types';
+import { CartItem, Order, DeliveryZone, Vendor } from '../types';
 import { CURRENCY, KAZANG_PRODUCT_IDS, KAZANG_CONFIG, BACKEND_API_URL, DELIVERY_ZONES, PICKUP_ADDRESS, ZONE_LANDMARKS } from '../constants';
 
 interface CheckoutModalProps {
@@ -84,11 +84,29 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
       shippingCost: shippingCost
     };
 
-    // Identify unique vendors to notify
-    // This looks at the cart, extracts unique vendor emails (e.g. ninagibs@gmail.com)
-    const vendorsToNotify = Array.from(new Set(cart.map(item => item.vendor)))
-      .filter(v => v.email)
-      .map(v => ({ name: v.name, email: v.email }));
+    // 1. Identify Unique Vendors (Group by ID to be safe)
+    const uniqueVendorsMap = new Map<string, Vendor>();
+    cart.forEach(item => {
+      if (item.vendor && item.vendor.email) {
+        uniqueVendorsMap.set(item.vendor.id, item.vendor);
+      }
+    });
+
+    const vendorsToNotify = Array.from(uniqueVendorsMap.values()).map(v => ({
+      name: v.name,
+      email: v.email
+    }));
+
+    // 2. Debug Log: Show exactly who we are trying to email
+    console.group("📧 Notification Debugger");
+    console.log("Cart Items:", cart.length);
+    console.log("Unique Vendors Found:", vendorsToNotify.length);
+    if (vendorsToNotify.length > 0) {
+      console.table(vendorsToNotify);
+    } else {
+      console.warn("No vendors with emails found in this order.");
+    }
+    console.groupEnd();
 
     try {
       console.log(`[Notification] Connecting to backend at ${BACKEND_API_URL}...`);
@@ -111,15 +129,15 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cart, cl
         }),
       }).then(response => {
         if (response.ok) {
-          console.log("[Notification] Customer Confirmation sent.");
+          console.log("[Notification] ✅ Data sent to Backend successfully.");
           if (vendorsToNotify.length > 0) {
-            console.log(`[Notification] Vendor Alerts sent to: ${vendorsToNotify.map(v => v.email).join(', ')}`);
+            console.log(`[Notification] Backend instructed to email: ${vendorsToNotify.map(v => v.email).join(', ')}`);
           }
         } else {
-          console.warn("[Notification] Backend returned error status.");
+          console.warn("[Notification] ❌ Backend returned error status:", response.status);
         }
       }).catch(err => {
-        console.warn("[Notification] Could not reach backend.", err);
+        console.warn("[Notification] ❌ Could not reach backend.", err);
       });
 
     } catch (e) {

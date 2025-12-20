@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Shield, Lock, History, BellRing, SearchCheck, Laptop, ShieldCheck, Bug, Database, Cloud, GitBranch, Zap } from 'lucide-react';
+import { X, Shield, Lock, History, SearchCheck, Laptop, ShieldCheck, Bug, Database, Cloud, GitBranch, Zap, Scale, Copyright, FileText } from 'lucide-react';
 
 interface ComplianceModalProps {
   isOpen: boolean;
@@ -7,7 +7,7 @@ interface ComplianceModalProps {
 }
 
 const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'infrastructure' | 'software' | 'security' | 'privacy'>('infrastructure');
+  const [activeTab, setActiveTab] = useState<'infrastructure' | 'software' | 'security' | 'privacy' | 'governance'>('infrastructure');
 
   if (!isOpen) return null;
 
@@ -22,11 +22,16 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClose }) =>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-black"><X size={20} /></button>
         </div>
-        <div className="flex border-b border-gray-100 overflow-x-auto no-scrollbar">
-          <button onClick={() => setActiveTab('infrastructure')} className={`flex-1 min-w-[120px] py-3 text-[10px] uppercase tracking-widest font-medium transition-colors ${activeTab === 'infrastructure' ? 'bg-white border-b-2 border-black text-black' : 'bg-gray-50 text-gray-400'}`}>Infrastructure</button>
-          <button onClick={() => setActiveTab('software')} className={`flex-1 min-w-[120px] py-3 text-[10px] uppercase tracking-widest font-medium transition-colors ${activeTab === 'software' ? 'bg-white border-b-2 border-black text-black' : 'bg-gray-50 text-gray-400'}`}>Software (SDLC)</button>
-          <button onClick={() => setActiveTab('security')} className={`flex-1 min-w-[120px] py-3 text-[10px] uppercase tracking-widest font-medium transition-colors ${activeTab === 'security' ? 'bg-white border-b-2 border-black text-black' : 'bg-gray-50 text-gray-400'}`}>Device & Data</button>
-          <button onClick={() => setActiveTab('privacy')} className={`flex-1 min-w-[120px] py-3 text-[10px] uppercase tracking-widest font-medium transition-colors ${activeTab === 'privacy' ? 'bg-white border-b-2 border-black text-black' : 'bg-gray-50 text-gray-400'}`}>Incidents</button>
+        <div className="flex border-b border-gray-100 overflow-x-auto no-scrollbar bg-stone-50/50">
+          {[
+            { id: 'infrastructure', label: 'Infra' },
+            { id: 'software', label: 'SDLC' },
+            { id: 'security', label: 'Security' },
+            { id: 'governance', label: 'Governance' },
+            { id: 'privacy', label: 'Incidents' }
+          ].map((tab) => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex-1 min-w-[100px] py-3 text-[10px] uppercase tracking-widest font-medium transition-colors ${activeTab === tab.id ? 'bg-white border-b-2 border-black text-black' : 'text-gray-400 hover:bg-gray-100'}`}>{tab.label}</button>
+          ))}
         </div>
         <div className="p-6 md:p-8 flex-1 overflow-y-auto font-sans">
           {activeTab === 'infrastructure' && (
@@ -35,15 +40,12 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClose }) =>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border border-gray-100 bg-stone-50 rounded-sm">
                   <Cloud size={20} className="text-stone-700 mb-2" /><h4 className="font-bold text-xs uppercase">Network Isolation</h4>
-                  <p className="text-[11px] text-gray-500 mt-1">Production databases reside in private subnets with no public ingress.</p>
+                  <p className="text-[11px] text-gray-500 mt-1">Production databases reside in private subnets via secure VPC peering.</p>
                 </div>
                 <div className="p-4 border border-gray-100 bg-stone-50 rounded-sm">
                   <Database size={20} className="text-stone-700 mb-2" /><h4 className="font-bold text-xs uppercase">Data Encryption</h4>
-                  <p className="text-[11px] text-gray-500 mt-1">AES-256 encryption at rest. All transit data protected by TLS 1.3.</p>
+                  <p className="text-[11px] text-gray-500 mt-1">AES-256 at rest. TLS 1.3 in transit with HSTS.</p>
                 </div>
-              </div>
-              <div className="border border-gray-200 rounded-sm overflow-hidden">
-                <table className="w-full text-sm text-left"><thead className="bg-gray-50 text-[10px] uppercase tracking-wider"><tr><th className="px-4 py-3">Vendor</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Compliance</th></tr></thead><tbody className="divide-y divide-gray-100"><tr><td className="px-4 py-3 font-medium">Render / AWS</td><td className="px-4 py-3 text-gray-600">Primary Hosting</td><td className="px-4 py-3 text-gray-600">SOC 2 Type II</td></tr><tr><td className="px-4 py-3 font-medium">Cloudflare</td><td className="px-4 py-3 text-gray-600">WAF / Edge Security</td><td className="px-4 py-3 text-gray-600">ISO 27001</td></tr></tbody></table>
               </div>
             </div>
           )}
@@ -51,9 +53,8 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClose }) =>
             <div className="space-y-6 animate-fade-in">
               <h3 className="text-xl font-serif">Software Development (SDLC)</h3>
               <div className="space-y-4">
-                <div className="flex items-start space-x-3"><GitBranch size={18} className="mt-1" /><div><h4 className="font-bold text-xs uppercase">Peer Reviews</h4><p className="text-xs text-gray-500">Mandatory code reviews and branch protection for all changes.</p></div></div>
-                <div className="flex items-start space-x-3"><Zap size={18} className="mt-1" /><div><h4 className="font-bold text-xs uppercase">CI/CD Automation</h4><p className="text-xs text-gray-500">Automated security linting and testing on every pull request.</p></div></div>
-                <div className="flex items-start space-x-3"><Bug size={18} className="mt-1" /><div><h4 className="font-bold text-xs uppercase">Vuln Scanning</h4><p className="text-xs text-gray-500">Daily dependency scans for known vulnerabilities via GitHub.</p></div></div>
+                <div className="flex items-start space-x-3"><GitBranch size={18} className="mt-1" /><div><h4 className="font-bold text-xs uppercase">Code Reviews</h4><p className="text-xs">All changes require peer review before merging.</p></div></div>
+                <div className="flex items-start space-x-3"><Bug size={18} className="mt-1" /><div><h4 className="font-bold text-xs uppercase">Vulnerability Scanning</h4><p className="text-xs">Daily automated scans for third-party library vulnerabilities.</p></div></div>
               </div>
             </div>
           )}
@@ -61,15 +62,23 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClose }) =>
             <div className="space-y-6 animate-fade-in">
               <h3 className="text-xl font-serif">Device Governance</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 border border-gray-100 bg-stone-50 rounded-sm"><Laptop size={20} className="mb-2"/><h4 className="font-bold text-xs uppercase">Endpoint Controls</h4><p className="text-[11px]">Full Disk Encryption (FDE) and automated patching enforced.</p></div>
-                <div className="p-4 border border-gray-100 bg-stone-50 rounded-sm"><ShieldCheck size={20} className="mb-2"/><h4 className="font-bold text-xs uppercase">AV/EDR Policy</h4><p className="text-[11px]">Apple XProtect and Gatekeeper active for real-time malware detection.</p></div>
+                <div className="p-4 border border-gray-100 bg-stone-50 rounded-sm"><Laptop size={20} className="mb-2"/><h4 className="font-bold text-xs uppercase">Endpoint Controls</h4><p className="text-[11px]">FDE and automated patching enforced on corporate hardware.</p></div>
+              </div>
+            </div>
+          )}
+          {activeTab === 'governance' && (
+            <div className="space-y-6 animate-fade-in">
+              <h3 className="text-xl font-serif">Governance & Compliance</h3>
+              <div className="space-y-6">
+                <div className="flex items-start space-x-3"><Scale size={18} className="mt-1" /><div><h4 className="font-bold text-xs uppercase">Legislative Alignment</h4><p className="text-xs text-gray-500 mt-1">Compliant with the Zambia Data Protection Act (2021) and BoZ regulations.</p></div></div>
+                <div className="flex items-start space-x-3"><Copyright size={18} className="mt-1" /><div><h4 className="font-bold text-xs uppercase">Intellectual Property (IP)</h4><p className="text-xs text-gray-500 mt-1">Policies protect artisan recipes. Internal software uses MIT/Apache 2.0 or proprietary IP.</p></div></div>
+                <div className="flex items-start space-x-3"><FileText size={18} className="mt-1" /><div><h4 className="font-bold text-xs uppercase">Contractual Integrity</h4><p className="text-xs text-gray-500 mt-1">Standardized Vendor Agreements define liabilities and IP rights.</p></div></div>
               </div>
             </div>
           )}
           {activeTab === 'privacy' && (
             <div className="space-y-8 animate-fade-in">
-               <div className="flex items-start space-x-4"><div className="bg-green-50 p-3 rounded-full"><History size={24} className="text-green-700" /></div><div><h4 className="font-bold text-sm uppercase">Security History</h4><p className="text-sm text-gray-600">Zero (0) breaches reported in the last 36 months.</p><span className="inline-block mt-2 px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold uppercase rounded">Status: Compliant</span></div></div>
-               <div className="pt-6 border-t border-gray-100"><h4 className="font-bold text-xs uppercase mb-2">Primary Security Contact</h4><p className="text-sm">Nina Beatty, Security Officer: ninagibs@gmail.com</p></div>
+               <div className="flex items-start space-x-4"><div className="bg-green-50 p-3 rounded-full"><History size={24} className="text-green-700" /></div><div><h4 className="font-bold text-sm uppercase">Security History</h4><p className="text-sm">Zero (0) breaches in 36 months.</p></div></div>
             </div>
           )}
         </div>

@@ -2,14 +2,16 @@ export interface Vendor {
   id: string;
   name: string;
   location: string;
-  email?: string; // Email for order notifications
+  email?: string;
+  story?: string; // New: Story about the artisan
 }
 
 export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number; // In Zambian Kwacha (ZMW)
+  details?: string; // New: Longer artisanal details
+  price: number; 
   category: string;
   image: string;
   vendor: Vendor;
@@ -18,12 +20,6 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number;
-}
-
-export interface DeliveryZone {
-  id: string;
-  name: string;
-  price: number;
 }
 
 export interface Order {
@@ -41,17 +37,8 @@ export interface Order {
   shippingCost: number;
 }
 
-export interface UserDetails {
+export interface DeliveryZone {
+  id: string;
   name: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-}
-
-export enum CheckoutStep {
-  CART = 'CART',
-  DETAILS = 'DETAILS',
-  PAYMENT = 'PAYMENT',
-  SUCCESS = 'SUCCESS'
+  price: number;
 }

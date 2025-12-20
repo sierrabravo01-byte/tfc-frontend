@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Shield, Server, Lock, FileText, Globe, Zap, ShieldAlert, History, BellRing, SearchCheck, Laptop, ShieldCheck } from 'lucide-react';
+import { X, Shield, Server, Lock, FileText, Globe, Zap, ShieldAlert, History, BellRing, SearchCheck, Laptop, ShieldCheck, Bug } from 'lucide-react';
 
 interface ComplianceModalProps {
   isOpen: boolean;
@@ -101,9 +101,9 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClose }) =>
                 </div>
                 <div className="p-4 border border-gray-100 bg-stone-50 rounded-sm">
                   <ShieldCheck size={20} className="text-stone-700 mb-2" />
-                  <h4 className="font-bold text-xs uppercase tracking-wide">BYOD Policy</h4>
+                  <h4 className="font-bold text-xs uppercase tracking-wide">Endpoint Protection</h4>
                   <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
-                    Access to production systems is restricted to encrypted corporate hardware. Personal devices limited to general communication.
+                    AV/EDR enforced via Apple XProtect & Gatekeeper. Real-time malware detection and binary verification active on all corporate hardware.
                   </p>
                 </div>
                 <div className="p-4 border border-gray-100 bg-stone-50 rounded-sm">
@@ -114,10 +114,17 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClose }) =>
                   </p>
                 </div>
                 <div className="p-4 border border-gray-100 bg-stone-50 rounded-sm">
-                  <Globe size={20} className="text-stone-700 mb-2" />
-                  <h4 className="font-bold text-xs uppercase tracking-wide">Network Edge</h4>
+                  <Bug size={20} className="text-stone-700 mb-2" />
+                  <h4 className="font-bold text-xs uppercase tracking-wide">Vulnerability Scanning</h4>
                   <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
-                    WAF and DDoS protection active globally via Cloudflare to mitigate automated threats and zero-day vulnerabilities.
+                    Automated dependency scanning via GitHub Dependabot and runtime security monitoring via Render's infrastructure logs.
+                  </p>
+                </div>
+                <div className="p-4 border border-gray-100 bg-stone-50 rounded-sm md:col-span-2">
+                  <ShieldCheck size={20} className="text-stone-700 mb-2" />
+                  <h4 className="font-bold text-xs uppercase tracking-wide">BYOD Policy</h4>
+                  <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                    Access to production systems is restricted to encrypted corporate hardware. Personal devices limited to communication tools.
                   </p>
                 </div>
               </div>
@@ -138,15 +145,6 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClose }) =>
                     <span className="inline-block mt-2 px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold uppercase rounded">Status: Compliant</span>
                   </div>
                </div>
-               <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <SearchCheck size={18} className="text-stone-700" />
-                    <h4 className="font-bold text-sm uppercase tracking-wide">Incident Detection</h4>
-                  </div>
-                  <p className="text-sm text-gray-600 leading-relaxed pl-7">
-                    Anomalies are detected via Cloudflare's adaptive security model and Render’s infrastructure metrics.
-                  </p>
-               </div>
                <div className="pt-6 border-t border-gray-100">
                 <h4 className="font-bold text-xs uppercase tracking-wide mb-2">Primary Security Contact</h4>
                 <p className="text-sm text-gray-600">
@@ -160,5 +158,3 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ isOpen, onClose }) =>
     </div>
   );
 };
-
-export default ComplianceModal;
